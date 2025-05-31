@@ -1,8 +1,11 @@
 import 'dart:math';
+import 'package:aplicacion_gastos_final/utils/constans.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class GraphWidget extends StatefulWidget {
+  const GraphWidget({super.key});
+
   @override
   _GraphWidgetState createState() => _GraphWidgetState();
 }
@@ -74,7 +77,7 @@ class _GraphWidgetState extends State<GraphWidget> {
               spots: List.generate(data.length,
                   (i) => FlSpot(i.toDouble(), data[i])),
               isCurved: true,
-              color: Colors.blue,
+              color: appPrimaryColor,
               barWidth: 3,
               dotData: FlDotData(show: false),
             ),

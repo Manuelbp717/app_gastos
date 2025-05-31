@@ -1,8 +1,12 @@
+import 'package:aplicacion_gastos_final/utils/constans.dart';
 import 'package:aplicacion_gastos_final/utils/graphic.dart';
+import 'package:aplicacion_gastos_final/utils/lista.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -11,11 +15,18 @@ class _HomePageState extends State<HomePage> {
   late PageController _controller;
   int currentPage = 9;
 
+  final List<ExpenseItem> _items = [
+    ExpenseItem(
+      icon: FontAwesomeIcons.shoppingCart,
+      name: "Shopping",
+      percent: 14,
+      value: 145.12,
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
-
     _controller = PageController(
       initialPage: currentPage,
       viewportFraction: 0.4,
@@ -24,10 +35,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _bottomAction(IconData icon) {
     return InkWell(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Icon(icon),
-      ),
+      child: Padding(padding: const EdgeInsets.all(8.0), child: Icon(icon)),
       onTap: () {},
     );
   }
@@ -35,6 +43,12 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: appBackgroundColor,
+        elevation: 4.0,
+        toolbarHeight: 60.0,
+        flexibleSpace: SafeArea(child: _selector()),
+      ),
       bottomNavigationBar: BottomAppBar(
         notchMargin: 8.0,
         shape: CircularNotchedRectangle(),
@@ -53,9 +67,94 @@ class _HomePageState extends State<HomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () async {
+          final newItem = await showDialog<ExpenseItem>(
+            context: context,
+            builder: (context) => _buildFormDialog(),
+          );
+
+          if (newItem != null) {
+            setState(() {
+              _items.add(newItem);
+            });
+          }
+        },
       ),
       body: _body(),
+    );
+  }
+
+  Widget _buildFormDialog() {
+    final nameController = TextEditingController();
+    final percentController = TextEditingController();
+    final valueController = TextEditingController();
+    IconData selectedIcon = FontAwesomeIcons.shoppingCart;
+
+    return AlertDialog(
+      title: Text('Agregar gasto'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(labelText: "Nombre"),
+            ),
+            TextField(
+              controller: percentController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: "% del gasto"),
+            ),
+            TextField(
+              controller: valueController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: "Valor (\$)"),
+            ),
+            DropdownButton<IconData>(
+              value: selectedIcon,
+              items:
+                  [
+                    FontAwesomeIcons.shoppingCart,
+                    FontAwesomeIcons.car,
+                    FontAwesomeIcons.utensils,
+                    FontAwesomeIcons.house,
+                  ].map((icon) {
+                    return DropdownMenuItem(value: icon, child: Icon(icon));
+                  }).toList(),
+              onChanged: (icon) {
+                if (icon != null) {
+                  selectedIcon = icon;
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text("Cancelar"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final name = nameController.text;
+            final percent = int.tryParse(percentController.text) ?? 0;
+            final value = double.tryParse(valueController.text) ?? 0.0;
+
+            if (name.isNotEmpty && percent > 0 && value > 0) {
+              Navigator.of(context).pop(
+                ExpenseItem(
+                  icon: selectedIcon,
+                  name: name,
+                  percent: percent,
+                  value: value,
+                ),
+              );
+            }
+          },
+          child: Text("Agregar"),
+        ),
+      ],
     );
   }
 
@@ -63,13 +162,9 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: Column(
         children: <Widget>[
-          _selector(),
           _expenses(),
           _graph(),
-          Container(
-            color: Colors.blueAccent.withOpacity(0.15),
-            height: 24.0,
-          ),
+          Container(color: appBackgroundColor, height: 24.0),
           _list(),
         ],
       ),
@@ -77,31 +172,29 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _pageItem(String name, int position) {
-    var _alignment;
+    Alignment alignment;
     final selected = TextStyle(
       fontSize: 20.0,
       fontWeight: FontWeight.bold,
-      color: Colors.blueGrey,
+      color: appPrimaryColor,
     );
     final unselected = TextStyle(
       fontSize: 20.0,
       fontWeight: FontWeight.normal,
-      color: Colors.blueGrey.withOpacity(0.4),
+      color: appPrimaryColor.withOpacity(0.2),
     );
 
     if (position == currentPage) {
-      _alignment = Alignment.center;
+      alignment = Alignment.center;
     } else if (position > currentPage) {
-      _alignment = Alignment.centerRight;
+      alignment = Alignment.centerRight;
     } else {
-      _alignment = Alignment.centerLeft;
+      alignment = Alignment.centerLeft;
     }
 
     return Align(
-      alignment: _alignment,
-      child: Text(name,
-        style: position == currentPage ? selected : unselected,
-      ),
+      alignment: alignment,
+      child: Text(name, style: position == currentPage ? selected : unselected),
     );
   }
 
@@ -136,17 +229,20 @@ class _HomePageState extends State<HomePage> {
   Widget _expenses() {
     return Column(
       children: <Widget>[
-        Text("\$2361,41",
+        Text(
+          "\$2361,41",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 40.0,
+            fontSize: 30.0,
+            color: appText,
           ),
         ),
-        Text("Total expenses",
+        Text(
+          "Total expenses",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16.0,
-            color: Colors.blueGrey,
+            fontSize: 14.0,
+            color: appPrimaryColor,
           ),
         ),
       ],
@@ -154,39 +250,40 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _graph() {
-    return Container(
-      height: 250.0,
-      child: GraphWidget(),
-    );
+    return SizedBox(height: 190.0, child: GraphWidget());
   }
 
   Widget _item(IconData icon, String name, int percent, double value) {
     return ListTile(
-      leading: Icon(icon, size: 32.0,),
-      title: Text(name,
+      leading: Icon(icon, size: 32.0, color: appPrimaryColor),
+      title: Text(
+        name,
         style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20.0
+          fontWeight: FontWeight.bold,
+          fontSize: 20.0,
+          color: appPrimaryColor,
         ),
       ),
-      subtitle: Text("$percent% of expenses",
+      subtitle: Text(
+        "$percent% of expenses",
         style: TextStyle(
           fontSize: 16.0,
-          color: Colors.blueGrey,
+          color: appPrimaryColor.withOpacity(0.3),
         ),
       ),
       trailing: Container(
         decoration: BoxDecoration(
-          color: Colors.blueAccent.withOpacity(0.2),
+          color: appPrimaryColor.withOpacity(0.3),
           borderRadius: BorderRadius.circular(5.0),
         ),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text("\$$value",
+          child: Text(
+            "\$$value",
             style: TextStyle(
-              color: Colors.blueAccent,
+              color: appPrimaryColor,
               fontWeight: FontWeight.w500,
-              fontSize: 16.0,
+              fontSize: 14.0,
             ),
           ),
         ),
@@ -197,9 +294,11 @@ class _HomePageState extends State<HomePage> {
   Widget _list() {
     return Expanded(
       child: ListView.separated(
-        itemCount: 15,
-        itemBuilder: (BuildContext context, int index) =>
-            _item(FontAwesomeIcons.shoppingCart, "Shopping", 14, 145.12),
+        itemCount: _items.length,
+        itemBuilder: (BuildContext context, int index) {
+          final item = _items[index];
+          return _item(item.icon, item.name, item.percent, item.value);
+        },
         separatorBuilder: (BuildContext context, int index) {
           return Container(
             color: Colors.blueAccent.withOpacity(0.15),
