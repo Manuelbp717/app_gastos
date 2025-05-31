@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Programa la navegación para después de que se construya el widget
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => Homepage()), // Navega a la página principal
+          MaterialPageRoute(builder: (_) => HomePage()), // Navega a la página principal
           (route) => false, // Elimina todas las rutas anteriores de la pila
         );
       });
@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Si está verificado, redirige a la página de inicio
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => Homepage()),
+          MaterialPageRoute(builder: (_) => HomePage()),
           (route) => false, // Elimina todas las rutas anteriores
         );
       } on FirebaseAuthException catch (e) {
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Redirige a la página de inicio tras el login exitoso
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => Homepage()));
+      ).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
     } catch (e) {
       // Captura y muestra cualquier error durante el proceso
       ScaffoldMessenger.of(
