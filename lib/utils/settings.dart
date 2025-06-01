@@ -28,8 +28,9 @@ class ProfileScreen extends StatelessWidget {
         // Botón de regreso en la esquina superior izquierda
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: appText),
-          onPressed:
-              () => Navigator.pop(context), // Regresa a la pantalla anterior
+          onPressed: () async {
+            Navigator.pop(context); // Aquí sigue siendo sincrónico
+          },
         ),
       ),
       // Contenido principal con scroll para dispositivos pequeños

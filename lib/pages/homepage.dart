@@ -1,10 +1,15 @@
+import 'package:aplicacion_gastos_final/pages/login.dart';
 import 'package:aplicacion_gastos_final/utils/constans.dart';
 import 'package:aplicacion_gastos_final/utils/graphic.dart';
 import 'package:aplicacion_gastos_final/utils/lista.dart';
 import 'package:aplicacion_gastos_final/utils/settings.dart';
+import 'package:aplicacion_gastos_final/utils/tarjeta.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:math';
+
+import 'package:google_sign_in/google_sign_in.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,11 +21,34 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late PageController _controller;
   int currentPage = 0;
+  late User? _currentUser; // Usuario actual de Firebase Auth
 
   List<List<double>> monthlyGraphData = List.generate(
     12,
     (_) => List.generate(7, (_) => Random().nextDouble() * 100),
   );
+
+  // Método para cerrar sesión del usuario
+  Future<void> _logout() async {
+    try {
+      // Cierra sesión en Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Si se inició sesión con Google, también cierra sesión en Google
+      await GoogleSignIn().signOut();
+
+      // Navega a la pantalla de inicio de sesión y elimina todas las rutas anteriores
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()), // Navega a la pantalla de login
+        (route) => false, // Elimina todas las rutas anteriores
+      );
+    } catch (e) {
+      // Muestra un error si falla el cierre de sesión
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al cerrar sesión: $e')));
+    }
+  }
 
   final List<ExpenseItem> _items = [
     ExpenseItem(
@@ -46,11 +74,11 @@ class _HomePageState extends State<HomePage> {
     required VoidCallback onTap,
   }) {
     return InkWell(
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Icon(icon, color: color),
       ),
-      onTap: onTap,
     );
   }
 
@@ -73,12 +101,9 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
             _bottomAction(
-              FontAwesomeIcons.history,
+              FontAwesomeIcons.signOut,
               color: appBackgroundColor,
-              onTap: () {
-                print("Historial pulsado");
-                // Aquí puedes poner la acción que quieras
-              },
+              onTap:  _logout,
             ),
             _bottomAction(
               FontAwesomeIcons.chartPie,
@@ -91,25 +116,23 @@ class _HomePageState extends State<HomePage> {
             _bottomAction(
               FontAwesomeIcons.wallet,
               color: appBackgroundColor,
-              onTap: () {
-                print("Cartera pulsado");
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AgregarTarjetaPage()),
+                );
               },
             ),
             _bottomAction(
               Icons.settings,
               color: appBackgroundColor,
-              onTap: () {
-                Navigator.pop(context); // Cierra el drawer primero
-
-                // Espera un pequeño momento antes de hacer push
-                Future.delayed(Duration(milliseconds: 300), () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileScreen(),
-                    ),
-                  );
-                });
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
               },
             ),
           ],
@@ -310,7 +333,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _graph() {
-    return Container(
+    return SizedBox(
       height: 250.0,
       child: GraphWidget(data: monthlyGraphData[currentPage]),
     );
@@ -354,36 +377,29 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-Widget _list() { 
-  return Expanded(
-    child: ListView.separated(
-      padding: const EdgeInsets.only(bottom: 40.0), // Espacio al final
-      itemCount: _items.length,
-      itemBuilder: (BuildContext context, int index) {
-        final item = _items[index];
-        return Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: appPrimaryColor.withOpacity(0.3),
-              width: 1.0,
+  Widget _list() {
+    return Expanded(
+      child: ListView.separated(
+        padding: const EdgeInsets.only(bottom: 40.0), // Espacio al final
+        itemCount: _items.length,
+        itemBuilder: (BuildContext context, int index) {
+          final item = _items[index];
+          return Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: appPrimaryColor.withOpacity(0.3),
+                width: 1.0,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
             ),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          margin: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 4.0,
-          ),
-          child: _item(item.icon, item.name, item.percent, item.value),
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) {
-        return Container(
-          color: appBackgroundColor,
-          height: 8.0,
-        );
-      },
-    ),
-  );
-}
-
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: _item(item.icon, item.name, item.percent, item.value),
+          );
+        },
+        separatorBuilder: (BuildContext context, int index) {
+          return Container(color: appBackgroundColor, height: 8.0);
+        },
+      ),
+    );
+  }
 }

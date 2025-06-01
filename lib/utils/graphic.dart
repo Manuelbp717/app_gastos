@@ -5,7 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 class GraphWidget extends StatelessWidget {
   final List<double> data;
 
-  const GraphWidget({Key? key, required this.data}) : super(key: key);
+  const GraphWidget({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {

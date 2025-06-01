@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Método para verificar si hay un usuario ya autenticado en Firebase
   void _checkIfUserIsLoggedIn() {
+    
     final user = FirebaseAuth.instance.currentUser; // Obtiene el usuario actual
     if (user != null && user.emailVerified) {
       // Si el usuario está autenticado y su correo está verificado

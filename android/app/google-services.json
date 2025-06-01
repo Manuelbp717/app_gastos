@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "790308639710",
+    "project_id": "gastos-app-abd68",
+    "storage_bucket": "gastos-app-abd68.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:790308639710:android:560c7d6071bac2ad67834f",
+        "android_client_info": {
+          "package_name": "com.proyectofinal.aplicacion_gastos_final"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "790308639710-3ips9ldk5nrcp8rbs7hl1aae6vre5j8n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proyectofinal.aplicacion_gastos_final",
+            "certificate_hash": "c90f1e11c21fd1e6932991e33b9fbfc200ad359b"
+          }
+        },
+        {
+          "client_id": "790308639710-9uepapib21naf6qj61egfa1vqdg42g6k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBb4CUvJ4sK1eZIncSV6_wEHgZ7M06hops"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "790308639710-9uepapib21naf6qj61egfa1vqdg42g6k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "790308639710-8v6nbajf4huc5josa6r01tob2enqm8e9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "gastos-app-abd68"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
