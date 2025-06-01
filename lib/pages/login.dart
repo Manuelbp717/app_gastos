@@ -2,6 +2,7 @@ import 'package:aplicacion_gastos_final/utils/constans.dart';
 import 'package:aplicacion_gastos_final/utils/validar.dart';
 import 'package:flutter/material.dart'; // Importa el paquete principal de Flutter para UI
 import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Authentication
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart'; // Importa el paquete para autenticación con Google
 import 'package:aplicacion_gastos_final/pages/homepage.dart';
 
@@ -15,7 +16,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   // Variables de estado para controlar la visibilidad de la contraseña y el estado de carga
-  bool _isPasswordVisible = false; // Controla si la contraseña se muestra o se oculta
+  bool _isPasswordVisible =
+      false; // Controla si la contraseña se muestra o se oculta
   bool _isLoading = false; // Controla si se muestra el indicador de carga
 
   // Clave global para acceder y validar el formulario
@@ -34,14 +36,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Método para verificar si hay un usuario ya autenticado en Firebase
   void _checkIfUserIsLoggedIn() {
-    
     final user = FirebaseAuth.instance.currentUser; // Obtiene el usuario actual
     if (user != null && user.emailVerified) {
       // Si el usuario está autenticado y su correo está verificado
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Programa la navegación para después de que se construya el widget
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => HomePage()), // Navega a la página principal
+          MaterialPageRoute(
+            builder: (_) => HomePage(),
+          ), // Navega a la página principal
           (route) => false, // Elimina todas las rutas anteriores de la pila
         );
       });
@@ -50,7 +53,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Método para iniciar sesión con correo electrónico y contraseña
   Future<void> _signInWithEmailAndPassword() async {
-    if (_formKey.currentState!.validate()) { // Valida los campos del formulario
+    if (_formKey.currentState!.validate()) {
+      // Valida los campos del formulario
       // Establece el estado de carga para mostrar el indicador
       setState(() => _isLoading = true);
       try {
@@ -76,11 +80,14 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } on FirebaseAuthException catch (e) {
         // Manejo específico de errores de Firebase Authentication
-        String errorMessage = 'Error de inicio de sesión'; // Mensaje predeterminado
+        String errorMessage =
+            'Error de inicio de sesión'; // Mensaje predeterminado
         if (e.code == 'user-not-found') {
-          errorMessage = 'No se encontró un usuario con este correo'; // Error de usuario no encontrado
+          errorMessage =
+              'No se encontró un usuario con este correo'; // Error de usuario no encontrado
         } else if (e.code == 'wrong-password') {
-          errorMessage = 'Contraseña incorrecta'; // Error de contraseña incorrecta
+          errorMessage =
+              'Contraseña incorrecta'; // Error de contraseña incorrecta
         }
 
         // Muestra un SnackBar con el mensaje de error
@@ -106,7 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
             ), // Mensaje informativo
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(), // Cierra el diálogo
+                onPressed:
+                    () => Navigator.of(context).pop(), // Cierra el diálogo
                 child: const Text('Aceptar'), // Texto del botón
               ),
             ],
@@ -151,217 +159,331 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithFacebook() async {
+    try {
+      // Primero cierro sesión por si quedó algo guardado
+      await FacebookAuth.instance.logOut();
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.success) {
+        final accessToken = result.accessToken;
+        if (accessToken == null) {
+          print('Error: accessToken es null');
+          return;
+        }
+
+        final OAuthCredential facebookAuthCredential =
+            FacebookAuthProvider.credential(accessToken.tokenString);
+
+        final UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithCredential(facebookAuthCredential);
+
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
+      } else {
+        print('Error en login: ${result.message}');
+      }
+    } catch (e) {
+      print('Excepción en login: $e');
+    }
+  }
+
   // Construye la interfaz de usuario de la pantalla de login
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: appBackgroundColor, // Color de fondo definido en constants.dart
+      backgroundColor: appBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView( // Permite scroll cuando el teclado aparece
-          padding: const EdgeInsets.symmetric(horizontal: 30.0), // Padding horizontal
-          child: Form(
-            key: _formKey, // Asocia la clave global al formulario para validación
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40), // Espacio vertical inicial
-                // Ícono decorativo con contenedor circular
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: appPrimaryColor.withOpacity(0.1), // Color primario con transparencia
-                    shape: BoxShape.circle, // Forma circular
-                  ),
-                  child: const Icon(
-                    Icons.lock, // Ícono de candado para representar login
-                    size: 60,
-                    color: appPrimaryColor, // Color primario de la app
-                  ),
-                ),
-                const SizedBox(height: 30), // Espacio vertical
-
-                // Título de la página
-                const Text(
-                  "Inicia Sesión", // Texto del título
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: appPrimaryColor, // Color primario de la app
-                  ),
-                ),
-                const SizedBox(height: 30), // Espacio vertical
-
-                // Campo para ingresar el correo electrónico
-                TextFormField(
-                  controller: emailController, // Controlador para capturar el texto
-                  decoration: InputDecoration(
-                    labelText: "Correo electrónico", // Etiqueta del campo
-                    floatingLabelStyle: TextStyle(color: appPrimaryColor), // Color de la etiqueta al seleccionar
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Bordes redondeados
-                      borderSide: BorderSide(color: Colors.grey.shade300), // Color del borde
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300), // Borde cuando no está seleccionado
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: appPrimaryColor, width: 2), // Borde más grueso al seleccionar
-                    ),
-                    prefixIcon: Icon(Icons.email, color: Colors.grey.shade600), // Ícono de correo a la izquierda
-                    filled: true,
-                    fillColor: Colors.grey.shade50, // Color de fondo del campo
-                  ),
-                  keyboardType: TextInputType.emailAddress, // Teclado optimizado para emails
-                  validator: (value) => validateEmail(value), // Función de validación importada
-                ),
-                const SizedBox(height: 20), // Espacio vertical
-
-                // Campo para ingresar la contraseña
-                TextFormField(
-                  controller: passwordController, // Controlador para capturar el texto
-                  decoration: InputDecoration(
-                    labelText: "Contraseña", // Etiqueta del campo
-                    floatingLabelStyle: TextStyle(color: appPrimaryColor), // Color de la etiqueta al seleccionar
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Bordes redondeados
-                      borderSide: BorderSide(color: Colors.grey.shade300), // Color del borde
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300), // Borde cuando no está seleccionado
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: appPrimaryColor, width: 2), // Borde más grueso al seleccionar
-                    ),
-                    prefixIcon: Icon(Icons.lock, color: Colors.grey.shade600), // Ícono de candado a la izquierda
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility // Ícono de ojo abierto si la contraseña es visible
-                            : Icons.visibility_off, // Ícono de ojo cerrado si la contraseña está oculta
-                        color: Colors.grey.shade600,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible; // Alterna la visibilidad de la contraseña
-                        });
-                      },
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50, // Color de fondo del campo
-                  ),
-                  obscureText: !_isPasswordVisible, // Oculta el texto si _isPasswordVisible es false
-                  validator: validatePassword, // Función de validación importada
-                ),
-
-                // Enlace para recuperar contraseña olvidada
-                Align(
-                  alignment: Alignment.centerRight, // Alinea a la derecha
-                  child: TextButton(
-                    onPressed: () {
-                      
-                    },
-                    child: const Text(
-                      "¿Olvidaste tu contraseña?", // Texto del enlace
-                      style: TextStyle(color: appPrimaryColor), // Color primario para destacar
-                    ),
-                  ),
-                ),
-
-                // Botón principal de inicio de sesión
-                SizedBox(
-                  width: double.infinity, // Ocupa todo el ancho disponible
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signInWithEmailAndPassword, // Desactiva el botón durante la carga
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: appPrimaryColor, // Color de fondo del botón
-                      foregroundColor: Colors.white, // Color del texto
-                      padding: const EdgeInsets.symmetric(vertical: 16), // Relleno vertical
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12), // Bordes redondeados
-                      ),
-                      elevation: 3, // Sombra del botón
-                      shadowColor: appPrimaryColor.withOpacity(0.3), // Color de la sombra
-                    ),
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator( // Indicador de carga circular
-                                strokeWidth: 3,
-                                color: Colors.white, // Color blanco para contraste
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 40),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: appPrimaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.lock,
+                              size: 60,
+                              color: appPrimaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          const Text(
+                            "Inicia Sesión",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: appPrimaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          TextFormField(
+                            controller: emailController,
+                            decoration: InputDecoration(
+                              labelText: "Correo electrónico",
+                              floatingLabelStyle: TextStyle(
+                                color: appPrimaryColor,
                               ),
-                            )
-                            : const Text(
-                              "Iniciar sesión", // Texto del botón
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600, // Texto semi-negrita
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: appPrimaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.email,
+                                color: Colors.grey.shade600,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) => validateEmail(value),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: passwordController,
+                            decoration: InputDecoration(
+                              labelText: "Contraseña",
+                              floatingLabelStyle: TextStyle(
+                                color: appPrimaryColor,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: appPrimaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock,
+                                color: Colors.grey.shade600,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey.shade600,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            obscureText: !_isPasswordVisible,
+                            validator: validatePassword,
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {},
+                              child: const Text(
+                                "¿Olvidaste tu contraseña?",
+                                style: TextStyle(color: appPrimaryColor),
                               ),
                             ),
-                  ),
-                ),
-                const SizedBox(height: 25), // Espacio vertical
-
-                // Separador con texto "o continúa con"
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(color: Colors.grey.shade300, thickness: 1), // Línea divisoria izquierda
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15), // Espacio alrededor del texto
-                      child: Text(
-                        "o continúa con", // Texto del separador
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(color: Colors.grey.shade300, thickness: 1), // Línea divisoria derecha
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 25), // Espacio vertical
-
-                // Botón de inicio de sesión con Google
-                SizedBox(
-                  width: double.infinity, // Ocupa todo el ancho disponible
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _signInWithGoogle, // Desactiva el botón durante la carga
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white, // Fondo blanco
-                      foregroundColor: Colors.black87, // Color del texto casi negro
-                      padding: const EdgeInsets.symmetric(vertical: 14), // Relleno vertical
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12), // Bordes redondeados
-                      ),
-                      side: BorderSide(color: Colors.grey.shade300, width: 1), // Borde gris claro
-                      elevation: 0, // Sin elevación
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center, // Centra horizontalmente
-                      children: [
-                        Image.asset('lib/assets/icon/google.png', height: 24), // Logo de Google
-                        const SizedBox(width: 10), // Espacio entre logo y texto
-                        const Text(
-                          "Google", // Texto del botón
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500, // Texto medium
                           ),
-                        ),
-                      ],
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed:
+                                  _isLoading
+                                      ? null
+                                      : _signInWithEmailAndPassword,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appPrimaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 3,
+                                shadowColor: appPrimaryColor.withOpacity(0.3),
+                              ),
+                              child:
+                                  _isLoading
+                                      ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 3,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text(
+                                        "Iniciar sesión",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.grey.shade300,
+                                  thickness: 1,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                ),
+                                child: Text(
+                                  "o continúa con",
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.grey.shade300,
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 25),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : _signInWithGoogle,
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black87,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: FittedBox(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      'lib/assets/icon/google.png',
+                                      height: 24,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      "Google",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed:
+                                  _isLoading ? null : _signInWithFacebook,
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black87,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: FittedBox(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      'lib/assets/icon/social.png',
+                                      height: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "Facebook",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 30), // Espacio vertical final
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
