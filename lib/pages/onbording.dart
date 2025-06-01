@@ -28,19 +28,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Estructura de datos usando una lista de mapas para almacenar imagen, título y descripción
   final List<Map<String, String>> _onboardingData = [
     {
+      "image": "lib/assets/icon/shopping-bag_743007.png",
+      "title": "Control compras",
+      "description": "Empieza a administrar tus compras para saber cuanto gastas",
+    },
+    {
       "image": "lib/assets/icon/deficit_11689954.png",
       "title": "Control de gastos",
-      "description": "Prueba empezar a saber cuanto gastas.",
+      "description": "Pueba una nueva forma de administrar tus gastos",
     },
     {
       "image": "lib/assets/icon/period_11689989.png",
       "title": "Administra ingresos",
-      "description": "Es fundamental conocer tus ingresos y tener salud financiera.",
+      "description": "Conoce tus gastos y junto a tus ingresos.",
     },
+  
     {
       "image": "lib/assets/icon/profit_11690102.png",
       "title": "Analisa y grafica",
-      "description": "Lleva un control extricto y apoya tu futuro.",
+      "description": "Lleva un control, visualiza gastos y apoya tu futuro financiero.",
     },
   ];
 

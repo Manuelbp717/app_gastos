@@ -1,39 +1,28 @@
-import 'dart:math';
 import 'package:aplicacion_gastos_final/utils/constans.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-class GraphWidget extends StatefulWidget {
-  const GraphWidget({super.key});
+class GraphWidget extends StatelessWidget {
+  final List<double> data;
 
-  @override
-  _GraphWidgetState createState() => _GraphWidgetState();
-}
-
-class _GraphWidgetState extends State<GraphWidget> {
-  late List<double> data;
-
-  @override
-  void initState() {
-    super.initState();
-    var r = Random();
-    data = List<double>.generate(30, (i) => r.nextDouble() * 1500);
-  }
+  const GraphWidget({Key? key, required this.data}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      color: appBackgroundColor, // Fondo negro para todo el gráfico
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
         LineChartData(
+          backgroundColor: appBackgroundColor, // Fondo negro dentro del gráfico
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              tooltipBgColor: Colors.blueAccent,
+              tooltipBgColor: appText.withOpacity(0.2),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   return LineTooltipItem(
                     'Día ${spot.x.toInt() + 1}\nGasto: \$${spot.y.toStringAsFixed(2)}',
-                    const TextStyle(color: Colors.white),
+                    const TextStyle(color: appText),
                   );
                 }).toList();
               },
@@ -45,7 +34,18 @@ class _GraphWidgetState extends State<GraphWidget> {
               }
             },
           ),
-          gridData: FlGridData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            getDrawingHorizontalLine: (_) => FlLine(
+              color: Colors.white24,
+              strokeWidth: 1,
+            ),
+            getDrawingVerticalLine: (_) => FlLine(
+              color: Colors.white24,
+              strokeWidth: 1,
+            ),
+          ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
@@ -55,14 +55,24 @@ class _GraphWidgetState extends State<GraphWidget> {
                 getTitlesWidget: (value, meta) {
                   final day = value.toInt() + 1;
                   if ([1, 5, 10, 15, 20, 25, 30].contains(day)) {
-                    return Text(day.toString().padLeft(2, '0'));
+                    return Text(
+                      day.toString().padLeft(2, '0'),
+                      style: const TextStyle(color: appText, fontSize: 12),
+                    );
                   }
                   return const SizedBox.shrink();
                 },
               ),
             ),
             leftTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: true, interval: 500),
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 500,
+                getTitlesWidget: (value, meta) => Text(
+                  "\$${value.toInt()}",
+                  style: const TextStyle(color: appText, fontSize: 12),
+                ),
+              ),
             ),
             rightTitles: AxisTitles(
               sideTitles: SideTitles(showTitles: false),
@@ -71,11 +81,16 @@ class _GraphWidgetState extends State<GraphWidget> {
               sideTitles: SideTitles(showTitles: false),
             ),
           ),
-          borderData: FlBorderData(show: true),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(color: Colors.white24),
+          ),
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(data.length,
-                  (i) => FlSpot(i.toDouble(), data[i])),
+              spots: List.generate(
+                data.length,
+                (i) => FlSpot(i.toDouble(), data[i]),
+              ),
               isCurved: true,
               color: appPrimaryColor,
               barWidth: 3,
@@ -87,3 +102,4 @@ class _GraphWidgetState extends State<GraphWidget> {
     );
   }
 }
+

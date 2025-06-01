@@ -1,8 +1,10 @@
 import 'package:aplicacion_gastos_final/utils/constans.dart';
 import 'package:aplicacion_gastos_final/utils/graphic.dart';
 import 'package:aplicacion_gastos_final/utils/lista.dart';
+import 'package:aplicacion_gastos_final/utils/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:math';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,7 +15,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late PageController _controller;
-  int currentPage = 9;
+  int currentPage = 0;
+
+  List<List<double>> monthlyGraphData = List.generate(
+    12,
+    (_) => List.generate(7, (_) => Random().nextDouble() * 100),
+  );
 
   final List<ExpenseItem> _items = [
     ExpenseItem(
@@ -33,16 +40,24 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _bottomAction(IconData icon) {
+  Widget _bottomAction(
+    IconData icon, {
+    Color color = appPrimaryColor,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
-      child: Padding(padding: const EdgeInsets.all(8.0), child: Icon(icon)),
-      onTap: () {},
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Icon(icon, color: color),
+      ),
+      onTap: onTap,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: appBackgroundColor,
       appBar: AppBar(
         backgroundColor: appBackgroundColor,
         elevation: 4.0,
@@ -50,23 +65,61 @@ class _HomePageState extends State<HomePage> {
         flexibleSpace: SafeArea(child: _selector()),
       ),
       bottomNavigationBar: BottomAppBar(
+        color: appPrimaryColor,
         notchMargin: 8.0,
         shape: CircularNotchedRectangle(),
         child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            _bottomAction(FontAwesomeIcons.history),
-            _bottomAction(FontAwesomeIcons.chartPie),
-            SizedBox(width: 48.0),
-            _bottomAction(FontAwesomeIcons.wallet),
-            _bottomAction(Icons.settings),
+            _bottomAction(
+              FontAwesomeIcons.history,
+              color: appBackgroundColor,
+              onTap: () {
+                print("Historial pulsado");
+                // Aquí puedes poner la acción que quieras
+              },
+            ),
+            _bottomAction(
+              FontAwesomeIcons.chartPie,
+              color: appBackgroundColor,
+              onTap: () {
+                print("Gráficos pulsado");
+              },
+            ),
+            const SizedBox(width: 40.0),
+            _bottomAction(
+              FontAwesomeIcons.wallet,
+              color: appBackgroundColor,
+              onTap: () {
+                print("Cartera pulsado");
+              },
+            ),
+            _bottomAction(
+              Icons.settings,
+              color: appBackgroundColor,
+              onTap: () {
+                Navigator.pop(context); // Cierra el drawer primero
+
+                // Espera un pequeño momento antes de hacer push
+                Future.delayed(Duration(milliseconds: 300), () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                });
+              },
+            ),
           ],
         ),
       ),
+
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
+        backgroundColor: appPrimaryColor, // Fondo negro
+        child: Icon(Icons.add, color: appBackgroundColor), // Ícono verde
         onPressed: () async {
           final newItem = await showDialog<ExpenseItem>(
             context: context,
@@ -80,6 +133,7 @@ class _HomePageState extends State<HomePage> {
           }
         },
       ),
+
       body: _body(),
     );
   }
@@ -160,13 +214,19 @@ class _HomePageState extends State<HomePage> {
 
   Widget _body() {
     return SafeArea(
-      child: Column(
-        children: <Widget>[
-          _expenses(),
-          _graph(),
-          Container(color: appBackgroundColor, height: 24.0),
-          _list(),
-        ],
+      child: Container(
+        color: appBackgroundColor, // Fondo negro para todo el cuerpo
+        child: Column(
+          children: <Widget>[
+            _expenses(),
+            _graph(),
+            Container(
+              color: appBackgroundColor,
+              height: 24.0,
+            ), // Asegúrate de que appBackgroundColor combine con negro
+            _list(),
+          ],
+        ),
       ),
     );
   }
@@ -250,7 +310,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _graph() {
-    return SizedBox(height: 190.0, child: GraphWidget());
+    return Container(
+      height: 250.0,
+      child: GraphWidget(data: monthlyGraphData[currentPage]),
+    );
   }
 
   Widget _item(IconData icon, String name, int percent, double value) {
@@ -291,21 +354,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _list() {
-    return Expanded(
-      child: ListView.separated(
-        itemCount: _items.length,
-        itemBuilder: (BuildContext context, int index) {
-          final item = _items[index];
-          return _item(item.icon, item.name, item.percent, item.value);
-        },
-        separatorBuilder: (BuildContext context, int index) {
-          return Container(
-            color: Colors.blueAccent.withOpacity(0.15),
-            height: 8.0,
-          );
-        },
-      ),
-    );
-  }
+Widget _list() { 
+  return Expanded(
+    child: ListView.separated(
+      padding: const EdgeInsets.only(bottom: 40.0), // Espacio al final
+      itemCount: _items.length,
+      itemBuilder: (BuildContext context, int index) {
+        final item = _items[index];
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: appPrimaryColor.withOpacity(0.3),
+              width: 1.0,
+            ),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          margin: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 4.0,
+          ),
+          child: _item(item.icon, item.name, item.percent, item.value),
+        );
+      },
+      separatorBuilder: (BuildContext context, int index) {
+        return Container(
+          color: appBackgroundColor,
+          height: 8.0,
+        );
+      },
+    ),
+  );
+}
+
 }
